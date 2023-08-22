@@ -4,12 +4,12 @@
 </template>
 
 <script setup>
-import "./polyfill";
-import { reactive, ref } from "vue-demi";
-import Taro from "@tarojs/taro";
-import * as echarts from "../ec-canvas/echarts";
+import "../common/polyfill";
+import { ref } from "vue-demi";
+import { getEcharts } from "../common/index";
 import EcCanvas from "../ec-canvas/index";
 
+let echarts = getEcharts(); // 获取 echarts 模块
 const isWeb = ref(process.env.TARO_ENV === "h5"); // 平台类型
 const uid = ref(`canvas-${Date.now()}-${Math.floor(Math.random() * 10000)}`); // 唯一编号
 const canvas = ref(null); // 当前组件实例
@@ -75,35 +75,7 @@ function refresh(data, callback) {
           devicePixelRatio: canvasDpr
         });
         canvas.setChart(chartInstance);
-        // 优化图表尺寸未获取到的极端情况
-        if (!width || !height) {
-          let count = 0;
-          const doFn = () => {
-            count++;
-            Taro.createSelectorQuery()
-              .select(`.${uid.value}`)
-              .fields({
-                node: true,
-                size: true
-              })
-              .exec((res) => {
-                const canvasWidth = res[0].width;
-                const canvasHeight = res[0].height;
-                if ((!canvasWidth || !canvasHeight) && count < 20) {
-                  setTimeout(doFn, 100);
-                } else {
-                  chartInstance.resize({
-                    width: canvasWidth,
-                    height: canvasHeight
-                  });
-                  chartInstance.setOption(data);
-                }
-              });
-          };
-          doFn();
-        } else {
-          chartInstance.setOption(data);
-        }
+        chartInstance.setOption(data);
         if (typeof callback === "function") callback(chartInstance);
         resolve(chartInstance);
         return chartInstance;

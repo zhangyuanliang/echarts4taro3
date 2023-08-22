@@ -11,9 +11,10 @@
 <script setup>
 import Taro from "@tarojs/taro";
 import { onMounted } from "vue-demi";
-import * as echarts from "./echarts";
+import { getEcharts } from "../common/index";
 import WxCanvas from "./wx-canvas";
 
+let echarts = getEcharts(); // 获取 echarts 模块
 const props = defineProps({
   uid: {
     type: String,
@@ -43,7 +44,9 @@ onMounted(() => {
 function init(callback) {
   const query = Taro.createSelectorQuery();
   const { uid } = props;
-  Taro.nextTick(() => {
+  let count = 0;
+  const loopAction = () => {
+    count++;
     query
       .select(`.${uid}`)
       .fields({
@@ -59,6 +62,13 @@ function init(callback) {
         const canvasNode = res[0].node;
         const canvasWidth = res[0].width;
         const canvasHeight = res[0].height;
+        if ((!canvasWidth || !canvasHeight) && count <= 50) {
+          setTimeout(loopAction, 60);
+          return;
+        }
+        if (count > 50) {
+          console.warn("canvas 节点的宽或高为 0，可能无法正常渲染");
+        }
         const ctx = canvasNode.getContext("2d");
         const wxCanvas = new WxCanvas(ctx, true, canvasNode);
         echarts.setCanvasCreator(() => {
@@ -68,6 +78,9 @@ function init(callback) {
           chartInstance = callback(wxCanvas, canvasWidth, canvasHeight, canvasDpr);
         }
       });
+  };
+  Taro.nextTick(() => {
+    loopAction();
   });
 }
 
