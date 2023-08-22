@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import Taro from "@tarojs/taro";
 import { EChart } from "echarts4taro3";
 import "./index.less";
@@ -47,4 +47,12 @@ onMounted(() => {
     });
   });
 });
+onBeforeUnmount(() => {
+  const echartsInstance = canvas.value?.getChart()
+  if (echartsInstance) {
+    // echartsInstance.off()
+    // echartsInstance.clear()
+    echartsInstance.dispose()
+  }
+})
 </script>
